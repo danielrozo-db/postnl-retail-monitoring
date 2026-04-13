@@ -18,7 +18,7 @@ End-to-end retail data pipeline deployed on Databricks using **serverless comput
 
 ## Pipeline Tasks
 
-The serverless job runs every **10 minutes** with 4 sequential tasks:
+The serverless job runs **every hour** with 4 sequential tasks:
 
 | Task | Notebook | Description |
 |------|----------|-------------|
@@ -61,6 +61,24 @@ SQL queries in `src/queries/` for use in DBSQL dashboards:
 
 All alerts send email notifications to the deploying user.
 
+### Lakehouse Monitoring
+
+[Databricks Lakehouse Monitoring](https://docs.databricks.com/en/lakehouse-monitoring/index.html) is enabled on key silver and gold tables to automatically track statistical properties and data quality over time. Each monitor generates two metric tables and an auto-generated dashboard.
+
+| Monitored Table | What It Tracks |
+|-----------------|---------------|
+| `silver_transactions` | Transaction volume distributions, null rates, payment method cardinality, amount ranges |
+| `silver_line_items` | Product quantity and price distributions, category cardinality, line total ranges |
+| `gold_hourly_sales_by_store` | Revenue and customer count distributions per store, hourly volume patterns |
+| `gold_product_performance` | Units sold and revenue distributions, product count trends |
+
+For each monitored table, Lakehouse Monitoring creates:
+- **`<table>_profile_metrics`** — Statistical profiles per column (nulls, distinct counts, min/max, mean, quantiles, distributions)
+- **`<table>_drift_metrics`** — Data drift detection between consecutive snapshots (distribution changes, statistical shifts)
+- **Auto-generated dashboard** — Visual summary of profile and drift metrics
+
+Monitors run daily at **midnight (Europe/Amsterdam)** on an automated schedule.
+
 ## Cost Tracking
 
 Resources are tagged for cost attribution via `system.billing.usage`:
@@ -80,7 +98,7 @@ Use `src/queries/02_job_cost_by_tag.sql` to query costs filtered by these tags.
 ```
 ├── databricks.yml                          # Bundle config with dev/prod targets
 ├── resources/
-│   ├── jobs.yml                            # Serverless job (4 tasks, 10-min schedule, tags)
+│   ├── jobs.yml                            # Serverless job (4 tasks, hourly schedule, tags)
 │   └── monitoring.yml                      # 4 SQL alerts
 └── src/
     ├── notebooks/
