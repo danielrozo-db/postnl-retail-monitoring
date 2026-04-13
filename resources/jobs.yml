@@ -24,7 +24,7 @@ resources:
         no_alert_for_skipped_runs: true
 
       schedule:
-        quartz_cron_expression: "0 0 * * * ?"   # Every hour
+        quartz_cron_expression: "0 */5 * * * ?"   # Every 5 minutes
         timezone_id: "Europe/Amsterdam"
         pause_status: UNPAUSED
 
