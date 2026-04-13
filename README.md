@@ -24,10 +24,29 @@ The serverless job runs **every hour** with 4 sequential tasks:
 |------|----------|-------------|
 | `generate_raw_data` | `00_generate_raw_data.py` | Generates 150-300 synthetic Dutch retail transactions (stroopwafels, gouda, bitterballen, etc.) across 5 stores and writes JSON to a UC Volume |
 | `raw_to_bronze` | `01_raw_to_bronze.py` | Ingests new JSON files into a bronze Delta table with ingestion metadata. Tracks processed files for idempotency |
-| `bronze_to_silver` | `02_bronze_to_silver.py` | Deduplicates by transaction ID, runs data quality checks (null IDs, invalid amounts, empty items), quarantines bad records, and flattens line items into a separate table |
+| `bronze_to_silver` | `02_bronze_to_silver.py` | Deduplicates by transaction ID, runs data quality checks using [Databricks Labs DQX](https://github.com/databrickslabs/dqx), quarantines bad records, and flattens line items into a separate table |
 | `silver_to_gold` | `03_silver_to_gold.py` | Builds 4 gold tables: hourly sales by store, daily product performance, payment method analysis, and a pipeline health summary |
 
 ## Monitoring & Observability
+
+### Data Quality with DQX
+
+The silver layer uses [Databricks Labs DQX](https://github.com/databrickslabs/dqx) for declarative data quality checks. DQX applies row-level rules and splits the data into valid and quarantined DataFrames.
+
+| Check | Criticality | Rule |
+|-------|------------|------|
+| `transaction_id_not_null` | error | Transaction ID must not be null or empty |
+| `store_id_not_null` | error | Store ID must not be null or empty |
+| `customer_id_not_null` | error | Customer ID must not be null or empty |
+| `timestamp_not_null` | error | Timestamp must not be null or empty |
+| `total_amount_positive` | error | Total amount must be greater than zero |
+| `items_not_empty` | error | Items array must contain at least one item |
+| `payment_method_valid` | warn | Payment method must be one of: card, cash, ideal, contactless, apple_pay |
+| `currency_is_eur` | warn | Currency must be EUR |
+| `total_amount_in_range` | warn | Total amount must be between 0.01 and 10,000 |
+
+- **error** checks: failing rows are quarantined to `quarantine_transactions`
+- **warn** checks: flagged but rows still pass to silver
 
 ### Built-in Observability Tables
 
@@ -35,6 +54,7 @@ The serverless job runs **every hour** with 4 sequential tasks:
 |-------|---------|
 | `ingestion_log` | Tracks every raw data batch (batch ID, file path, record count, timestamp) |
 | `data_quality_log` | Records DQ metrics per run (total, clean, quarantined counts, quarantine rate) |
+| `quarantine_transactions` | Rows that failed DQX error-level checks, with `_error` and `_warning` columns for diagnosis |
 | `gold_pipeline_health` | Snapshots pipeline state (record counts across layers, avg quarantine rate, last ingestion time) |
 
 ### System Table Monitoring Queries

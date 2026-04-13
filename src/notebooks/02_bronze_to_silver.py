@@ -1,13 +1,24 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Silver Layer - Cleansed & Enriched
-# MAGIC Reads bronze data, flattens nested items, deduplicates, applies data quality checks,
-# MAGIC and writes clean, typed records to silver Delta tables.
+# MAGIC Reads bronze data, flattens nested items, deduplicates, applies data quality checks
+# MAGIC using **Databricks Labs DQX**, and writes clean, typed records to silver Delta tables.
+# MAGIC Quarantined rows are saved to a separate table for investigation.
+
+# COMMAND ----------
+
+# MAGIC %pip install databricks-labs-dqx
+# MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
 
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
+
+from databricks.labs.dqx.engine import DQEngine
+from databricks.labs.dqx.rule import DQRowRule, DQDatasetRule
+from databricks.labs.dqx import check_funcs
+from databricks.sdk import WorkspaceClient
 
 # COMMAND ----------
 
@@ -20,6 +31,7 @@ schema = dbutils.widgets.get("schema")
 bronze_table = f"{catalog}.{schema}.bronze_transactions"
 silver_transactions = f"{catalog}.{schema}.silver_transactions"
 silver_line_items = f"{catalog}.{schema}.silver_line_items"
+quarantine_table = f"{catalog}.{schema}.quarantine_transactions"
 dq_log_table = f"{catalog}.{schema}.data_quality_log"
 
 # COMMAND ----------
@@ -43,39 +55,116 @@ deduped_df = (
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Data quality checks
+# MAGIC ## Define DQX quality checks
+
+# COMMAND ----------
+
+dq_engine = DQEngine(WorkspaceClient())
+
+checks = [
+    # Required fields must not be null or empty
+    DQRowRule(
+        name="transaction_id_not_null",
+        criticality="error",
+        check_func=check_funcs.is_not_null_and_not_empty,
+        column="transaction_id",
+    ),
+    DQRowRule(
+        name="store_id_not_null",
+        criticality="error",
+        check_func=check_funcs.is_not_null_and_not_empty,
+        column="store_id",
+    ),
+    DQRowRule(
+        name="customer_id_not_null",
+        criticality="error",
+        check_func=check_funcs.is_not_null_and_not_empty,
+        column="customer_id",
+    ),
+
+    # Timestamp must be valid
+    DQRowRule(
+        name="timestamp_not_null",
+        criticality="error",
+        check_func=check_funcs.is_not_null_and_not_empty,
+        column="timestamp",
+    ),
+
+    # Total amount must be positive
+    DQRowRule(
+        name="total_amount_positive",
+        criticality="error",
+        check_func=check_funcs.sql_expression,
+        check_func_kwargs={
+            "expression": "total_amount > 0",
+            "msg": "total_amount must be greater than zero",
+        },
+    ),
+
+    # Items array must not be empty
+    DQRowRule(
+        name="items_not_empty",
+        criticality="error",
+        check_func=check_funcs.is_not_null_and_not_empty_array,
+        column="items",
+    ),
+
+    # Payment method must be a known value
+    DQRowRule(
+        name="payment_method_valid",
+        criticality="warn",
+        check_func=check_funcs.is_in_list,
+        column="payment_method",
+        check_func_kwargs={
+            "allowed": ["card", "cash", "ideal", "contactless", "apple_pay"],
+        },
+    ),
+
+    # Currency must be EUR
+    DQRowRule(
+        name="currency_is_eur",
+        criticality="warn",
+        check_func=check_funcs.is_in_list,
+        column="currency",
+        check_func_kwargs={"allowed": ["EUR"]},
+    ),
+
+    # Total amount should be within a reasonable range for a retail transaction
+    DQRowRule(
+        name="total_amount_in_range",
+        criticality="warn",
+        check_func=check_funcs.is_in_range,
+        column="total_amount",
+        check_func_kwargs={"min_limit": 0.01, "max_limit": 10000},
+    ),
+]
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Apply DQX checks and split into valid / quarantine
 
 # COMMAND ----------
 
 total_records = deduped_df.count()
 
-# Flag records with quality issues
-dq_df = deduped_df.withColumn(
-    "_dq_issues",
-    F.array_remove(
-        F.array(
-            F.when(F.col("transaction_id").isNull(), F.lit("missing_transaction_id")),
-            F.when(F.col("total_amount") <= 0, F.lit("invalid_total_amount")),
-            F.when(F.col("store_id").isNull(), F.lit("missing_store_id")),
-            F.when(
-                F.col("timestamp").isNull()
-                | F.to_timestamp("timestamp").isNull(),
-                F.lit("invalid_timestamp"),
-            ),
-            F.when(F.size("items") == 0, F.lit("empty_items")),
-        ),
-        None,
-    ),
-)
-
-clean_df = dq_df.filter(F.size("_dq_issues") == 0)
-quarantine_df = dq_df.filter(F.size("_dq_issues") > 0)
+clean_df, quarantine_df = dq_engine.apply_checks_and_split(deduped_df, checks)
 
 clean_count = clean_df.count()
 quarantine_count = quarantine_df.count()
-print(
-    f"Total: {total_records} | Clean: {clean_count} | Quarantined: {quarantine_count}"
-)
+
+print(f"Total: {total_records} | Clean: {clean_count} | Quarantined: {quarantine_count}")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Save quarantined rows for investigation
+
+# COMMAND ----------
+
+if quarantine_count > 0:
+    quarantine_df.write.mode("append").saveAsTable(quarantine_table)
+    print(f"Saved {quarantine_count} quarantined rows to {quarantine_table}")
 
 # COMMAND ----------
 
