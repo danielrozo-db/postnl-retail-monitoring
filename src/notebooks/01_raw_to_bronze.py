@@ -115,7 +115,7 @@ raw_df = (
     .json([f.path for f in new_files])
     .withColumn("_ingested_at", F.current_timestamp())
     .withColumn(
-        "_source_file", F.input_file_name()
+        "_source_file", F.col("_metadata.file_path")
     )
 )
 
@@ -166,14 +166,13 @@ raw_df.write.mode("append").saveAsTable(bronze_table)
 
 # COMMAND ----------
 
-from pyspark.sql import Row
-
-processed_rows = [
-    Row(file_path=f.path, processed_at=None) for f in new_files
-]
-
-spark.createDataFrame(processed_rows).withColumn(
-    "processed_at", F.current_timestamp()
-).write.mode("append").saveAsTable(checkpoint_table)
+for f in new_files:
+    escaped_path = f.path.replace("'", "''")
+    spark.sql(
+        f"""
+        INSERT INTO {checkpoint_table}
+        VALUES ('{escaped_path}', current_timestamp())
+    """
+    )
 
 print(f"Marked {len(new_files)} files as processed.")
