@@ -1,0 +1,138 @@
+resources:
+  # ──────────────────────────────────────────────
+  # Alerts (system table monitoring)
+  # SQL queries are in src/queries/ for use in DBSQL dashboards
+  # ──────────────────────────────────────────────
+  alerts:
+    # Alert: Job failure rate exceeds 20%
+    high_failure_rate:
+      display_name: "[${bundle.target}] PostNL - High Job Failure Rate"
+      warehouse_id: ${var.warehouse_id}
+      query_text: |
+        SELECT
+          ROUND(
+            SUM(CASE WHEN jr.result_state != 'SUCCESS' THEN 1 ELSE 0 END)
+            * 100.0 / GREATEST(COUNT(*), 1), 2
+          ) AS failure_rate_pct
+        FROM system.lakeflow.job_run_timeline AS jr
+        JOIN system.lakeflow.jobs AS j
+          ON jr.job_id = j.job_id
+        WHERE j.name LIKE '%PostNL Retail Pipeline%'
+          AND jr.start_time >= DATEADD(HOUR, -24, CURRENT_TIMESTAMP())
+          AND jr.result_state IS NOT NULL
+      evaluation:
+        comparison_operator: 'GREATER_THAN'
+        source:
+          name: 'failure_rate_pct'
+          display: 'failure_rate_pct'
+        threshold:
+          value:
+            double_value: 20
+        notification:
+          notify_on_ok: true
+          subscriptions:
+            - user_email: "${workspace.current_user.userName}"
+      schedule:
+        pause_status: 'UNPAUSED'
+        quartz_cron_schedule: '0 */15 * * * ?'
+        timezone_id: 'Europe/Amsterdam'
+      permissions:
+        - level: CAN_RUN
+          group_name: "users"
+
+    # Alert: Data freshness - no new data in 30+ minutes
+    stale_data:
+      display_name: "[${bundle.target}] PostNL - Stale Data Alert"
+      warehouse_id: ${var.warehouse_id}
+      query_text: |
+        SELECT
+          TIMESTAMPDIFF(
+            MINUTE,
+            MAX(generated_at),
+            CURRENT_TIMESTAMP()
+          ) AS minutes_since_last_ingestion
+        FROM ${var.catalog}.${var.schema}.ingestion_log
+      evaluation:
+        comparison_operator: 'GREATER_THAN'
+        source:
+          name: 'minutes_since_last_ingestion'
+          display: 'minutes_since_last_ingestion'
+        threshold:
+          value:
+            double_value: 30
+        notification:
+          notify_on_ok: true
+          subscriptions:
+            - user_email: "${workspace.current_user.userName}"
+      schedule:
+        pause_status: 'UNPAUSED'
+        quartz_cron_schedule: '0 */10 * * * ?'
+        timezone_id: 'Europe/Amsterdam'
+      permissions:
+        - level: CAN_RUN
+          group_name: "users"
+
+    # Alert: Data quality - quarantine rate exceeds 5%
+    high_quarantine_rate:
+      display_name: "[${bundle.target}] PostNL - High Quarantine Rate"
+      warehouse_id: ${var.warehouse_id}
+      query_text: |
+        SELECT
+          COALESCE(quarantine_rate, 0) AS latest_quarantine_rate
+        FROM ${var.catalog}.${var.schema}.data_quality_log
+        ORDER BY check_timestamp DESC
+        LIMIT 1
+      evaluation:
+        comparison_operator: 'GREATER_THAN'
+        source:
+          name: 'latest_quarantine_rate'
+          display: 'latest_quarantine_rate'
+        threshold:
+          value:
+            double_value: 5
+        notification:
+          notify_on_ok: false
+          subscriptions:
+            - user_email: "${workspace.current_user.userName}"
+      schedule:
+        pause_status: 'UNPAUSED'
+        quartz_cron_schedule: '0 */15 * * * ?'
+        timezone_id: 'Europe/Amsterdam'
+      permissions:
+        - level: CAN_RUN
+          group_name: "users"
+
+    # Alert: Daily cost exceeds threshold
+    cost_spike:
+      display_name: "[${bundle.target}] PostNL - Daily Cost Spike"
+      warehouse_id: ${var.warehouse_id}
+      query_text: |
+        SELECT
+          ROUND(SUM(u.usage_quantity * lp.pricing.default), 2) AS daily_cost_usd
+        FROM system.billing.usage AS u
+        LEFT JOIN system.billing.list_prices AS lp
+          ON u.cloud = lp.cloud
+          AND u.sku_name = lp.sku_name
+          AND u.usage_start_time BETWEEN lp.price_start_time
+            AND COALESCE(lp.price_end_time, TIMESTAMP '2099-12-31')
+        WHERE u.custom_tags.project = 'postnl-retail-monitoring'
+          AND u.usage_date = CURRENT_DATE()
+      evaluation:
+        comparison_operator: 'GREATER_THAN'
+        source:
+          name: 'daily_cost_usd'
+          display: 'daily_cost_usd'
+        threshold:
+          value:
+            double_value: 50
+        notification:
+          notify_on_ok: false
+          subscriptions:
+            - user_email: "${workspace.current_user.userName}"
+      schedule:
+        pause_status: 'UNPAUSED'
+        quartz_cron_schedule: '0 0 */4 * * ?'
+        timezone_id: 'Europe/Amsterdam'
+      permissions:
+        - level: CAN_RUN
+          group_name: "users"

@@ -1,0 +1,76 @@
+resources:
+  jobs:
+    # ──────────────────────────────────────────────
+    # Main pipeline: generates data + runs medallion
+    # Runs every 10 minutes on serverless compute
+    # ──────────────────────────────────────────────
+    retail_pipeline:
+      name: "[${bundle.target}] PostNL Retail Pipeline"
+      tags:
+        project: "postnl-retail-monitoring"
+        team: "data-engineering"
+        cost_center: "postnl-demo"
+        environment: "${bundle.target}"
+
+      # Serverless compute
+      environments:
+        - environment_key: "default"
+          spec:
+            client: "1"
+
+      email_notifications:
+        on_failure:
+          - "${workspace.current_user.userName}"
+        no_alert_for_skipped_runs: true
+
+      schedule:
+        quartz_cron_expression: "0 */10 * * * ?"   # Every 10 minutes
+        timezone_id: "Europe/Amsterdam"
+        pause_status: UNPAUSED
+
+      tasks:
+        # Task 1: Generate synthetic raw data
+        - task_key: "generate_raw_data"
+          notebook_task:
+            notebook_path: ../src/notebooks/00_generate_raw_data.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema}"
+          environment_key: "default"
+
+        # Task 2: Raw -> Bronze
+        - task_key: "raw_to_bronze"
+          depends_on:
+            - task_key: "generate_raw_data"
+          notebook_task:
+            notebook_path: ../src/notebooks/01_raw_to_bronze.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema}"
+          environment_key: "default"
+
+        # Task 3: Bronze -> Silver
+        - task_key: "bronze_to_silver"
+          depends_on:
+            - task_key: "raw_to_bronze"
+          notebook_task:
+            notebook_path: ../src/notebooks/02_bronze_to_silver.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema}"
+          environment_key: "default"
+
+        # Task 4: Silver -> Gold
+        - task_key: "silver_to_gold"
+          depends_on:
+            - task_key: "bronze_to_silver"
+          notebook_task:
+            notebook_path: ../src/notebooks/03_silver_to_gold.py
+            base_parameters:
+              catalog: "${var.catalog}"
+              schema: "${var.schema}"
+          environment_key: "default"
+
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"

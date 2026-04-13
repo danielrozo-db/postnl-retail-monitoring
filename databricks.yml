@@ -1,0 +1,32 @@
+bundle:
+  name: postnl-retail-monitoring
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    default: "postnl_retail"
+  schema:
+    default: "monitoring"
+  warehouse_id:
+    lookup:
+      warehouse: "Serverless Starter Warehouse"
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      profile: DEFAULT
+    variables:
+      catalog: "serverless_stable_a7uda0_catalog"
+      schema: "postnl_monitoring"
+
+  prod:
+    mode: production
+    workspace:
+      profile: DEFAULT
+    variables:
+      catalog: "postnl_retail"
+      schema: "monitoring"
