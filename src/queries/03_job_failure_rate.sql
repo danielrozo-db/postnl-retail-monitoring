@@ -13,6 +13,6 @@ FROM system.lakeflow.job_run_timeline AS jr
 JOIN system.lakeflow.jobs AS j
   ON jr.job_id = j.job_id
 WHERE j.name LIKE '%PostNL Retail Pipeline%'
-  AND jr.start_time >= DATEADD(HOUR, -24, CURRENT_TIMESTAMP())
+  AND jr.period_start_time >= DATEADD(HOUR, -24, CURRENT_TIMESTAMP())
   AND jr.result_state IS NOT NULL
 GROUP BY j.name;
