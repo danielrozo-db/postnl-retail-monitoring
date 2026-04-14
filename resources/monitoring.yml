@@ -11,7 +11,7 @@ resources:
       query_text: |
         SELECT
           ROUND(
-            SUM(CASE WHEN jr.result_state != 'SUCCESS' THEN 1 ELSE 0 END)
+            SUM(CASE WHEN jr.result_state != 'SUCCEEDED' THEN 1 ELSE 0 END)
             * 100.0 / GREATEST(COUNT(*), 1), 2
           ) AS failure_rate_pct
         FROM system.lakeflow.job_run_timeline AS jr
