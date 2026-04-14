@@ -26,7 +26,7 @@ resources:
       schedule:
         quartz_cron_expression: "0 0 * * * ?"   # Every hour
         timezone_id: "Europe/Amsterdam"
-        pause_status: UNPAUSED
+        pause_status: PAUSED
 
       tasks:
         # Task 1: Generate synthetic raw data
