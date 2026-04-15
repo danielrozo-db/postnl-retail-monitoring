@@ -1,0 +1,876 @@
+{
+  "pages": [
+    {
+      "name": "overview",
+      "displayName": "Pipeline Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "value": "# PostNL Retail Pipeline - Monitoring"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "subtitle",
+            "multilineTextboxSpec": {
+              "value": "Job trends, task durations, data quality, and pipeline health"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-total-runs",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpi",
+                  "fields": [
+                    {
+                      "name": "total_runs",
+                      "expression": "`total_runs`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_runs",
+                  "displayName": "Total Runs (7d)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-successful",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpi",
+                  "fields": [
+                    {
+                      "name": "successful_runs",
+                      "expression": "`successful_runs`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "successful_runs",
+                  "displayName": "Successful Runs"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi-avg-duration",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpi",
+                  "fields": [
+                    {
+                      "name": "avg_task_duration_min",
+                      "expression": "`avg_task_duration_min`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_task_duration_min",
+                  "displayName": "Avg Task Duration (min)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "section-job-trends",
+            "multilineTextboxSpec": {
+              "value": "## Job Run Trends"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "chart-run-trends",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_run_trends",
+                  "fields": [
+                    {
+                      "name": "daily(run_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `run_date`)"
+                    },
+                    {
+                      "name": "result_state",
+                      "expression": "`result_state`"
+                    },
+                    {
+                      "name": "sum(run_count)",
+                      "expression": "SUM(`run_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "daily(run_date)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Date"
+                },
+                "y": {
+                  "fieldName": "sum(run_count)",
+                  "displayName": "Run Count"
+                },
+                "color": {
+                  "fieldName": "result_state",
+                  "displayName": "Result"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "chart-duration",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_duration",
+                  "fields": [
+                    {
+                      "name": "daily(run_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `run_date`)"
+                    },
+                    {
+                      "name": "avg_duration_min",
+                      "expression": "`avg_duration_min`"
+                    },
+                    {
+                      "name": "max_duration_min",
+                      "expression": "`max_duration_min`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "daily(run_date)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Date"
+                },
+                "y": {
+                  "fieldName": "avg_duration_min",
+                  "displayName": "Avg Duration (min)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 6,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "section-tasks",
+            "multilineTextboxSpec": {
+              "value": "## Task Performance"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "chart-task-durations",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_task_trends",
+                  "fields": [
+                    {
+                      "name": "daily(run_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `run_date`)"
+                    },
+                    {
+                      "name": "task_key",
+                      "expression": "`task_key`"
+                    },
+                    {
+                      "name": "avg(avg_exec_seconds)",
+                      "expression": "AVG(`avg_exec_seconds`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "daily(run_date)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Date"
+                },
+                "y": {
+                  "fieldName": "avg(avg_exec_seconds)",
+                  "displayName": "Avg Execution (sec)"
+                },
+                "color": {
+                  "fieldName": "task_key",
+                  "displayName": "Task"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 13,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "section-dq",
+            "multilineTextboxSpec": {
+              "value": "## Data Quality"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "chart-dq-records",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_dq",
+                  "fields": [
+                    {
+                      "name": "daily(check_timestamp)",
+                      "expression": "DATE_TRUNC(\"DAY\", `check_timestamp`)"
+                    },
+                    {
+                      "name": "sum(clean_records)",
+                      "expression": "SUM(`clean_records`)"
+                    },
+                    {
+                      "name": "sum(quarantined_records)",
+                      "expression": "SUM(`quarantined_records`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "daily(check_timestamp)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Date"
+                },
+                "y": {
+                  "fieldName": "sum(clean_records)",
+                  "displayName": "Clean Records"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 20,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "chart-dq-rate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_dq",
+                  "fields": [
+                    {
+                      "name": "daily(check_timestamp)",
+                      "expression": "DATE_TRUNC(\"DAY\", `check_timestamp`)"
+                    },
+                    {
+                      "name": "avg(quarantine_rate)",
+                      "expression": "AVG(`quarantine_rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "daily(check_timestamp)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Date"
+                },
+                "y": {
+                  "fieldName": "avg(quarantine_rate)",
+                  "displayName": "Quarantine Rate (%)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 20,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "section-health",
+            "multilineTextboxSpec": {
+              "value": "## Pipeline Health Snapshot"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 26,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "table-health",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_health",
+                  "fields": [
+                    {
+                      "name": "snapshot_ts",
+                      "expression": "`snapshot_ts`"
+                    },
+                    {
+                      "name": "bronze_record_count",
+                      "expression": "`bronze_record_count`"
+                    },
+                    {
+                      "name": "silver_txn_count",
+                      "expression": "`silver_txn_count`"
+                    },
+                    {
+                      "name": "silver_items_count",
+                      "expression": "`silver_items_count`"
+                    },
+                    {
+                      "name": "avg_quarantine_rate_pct",
+                      "expression": "`avg_quarantine_rate_pct`"
+                    },
+                    {
+                      "name": "successful_batches",
+                      "expression": "`successful_batches`"
+                    },
+                    {
+                      "name": "last_ingestion_ts",
+                      "expression": "`last_ingestion_ts`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "snapshot_ts",
+                    "displayName": "Snapshot"
+                  },
+                  {
+                    "fieldName": "bronze_record_count",
+                    "displayName": "Bronze Records"
+                  },
+                  {
+                    "fieldName": "silver_txn_count",
+                    "displayName": "Silver Txns"
+                  },
+                  {
+                    "fieldName": "silver_items_count",
+                    "displayName": "Silver Items"
+                  },
+                  {
+                    "fieldName": "avg_quarantine_rate_pct",
+                    "displayName": "Quarantine %"
+                  },
+                  {
+                    "fieldName": "successful_batches",
+                    "displayName": "Batches"
+                  },
+                  {
+                    "fieldName": "last_ingestion_ts",
+                    "displayName": "Last Ingestion"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 27,
+            "width": 6,
+            "height": 4
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    },
+    {
+      "name": "costs",
+      "displayName": "Cost Analysis",
+      "layout": [
+        {
+          "widget": {
+            "name": "cost-title",
+            "multilineTextboxSpec": {
+              "value": "# Cost Analysis - Serverless & SQL Warehouse"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "cost-subtitle",
+            "multilineTextboxSpec": {
+              "value": "DBU consumption and estimated costs from system.billing.usage (last 30 days)"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "chart-account-daily-cost",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_daily_cost",
+                  "fields": [
+                    {
+                      "name": "daily(usage_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `usage_date`)"
+                    },
+                    {
+                      "name": "sum(estimated_cost_usd)",
+                      "expression": "SUM(`estimated_cost_usd`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "daily(usage_date)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Date"
+                },
+                "y": {
+                  "fieldName": "sum(estimated_cost_usd)",
+                  "displayName": "Cost (USD)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "section-project-cost",
+            "multilineTextboxSpec": {
+              "value": "## Project-Tagged Cost (postnl-retail-monitoring)"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "chart-project-cost",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_project_cost",
+                  "fields": [
+                    {
+                      "name": "daily(usage_date)",
+                      "expression": "DATE_TRUNC(\"DAY\", `usage_date`)"
+                    },
+                    {
+                      "name": "sum(estimated_cost_usd)",
+                      "expression": "SUM(`estimated_cost_usd`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "daily(usage_date)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Date"
+                },
+                "y": {
+                  "fieldName": "sum(estimated_cost_usd)",
+                  "displayName": "Cost (USD)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "chart-sku-pie",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_cost_by_sku",
+                  "fields": [
+                    {
+                      "name": "sku_name",
+                      "expression": "`sku_name`"
+                    },
+                    {
+                      "name": "sum(total_cost_usd)",
+                      "expression": "SUM(`total_cost_usd`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "sum(total_cost_usd)",
+                  "displayName": "Cost (USD)"
+                },
+                "color": {
+                  "fieldName": "sku_name",
+                  "displayName": "SKU"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 9,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "section-detail",
+            "multilineTextboxSpec": {
+              "value": "## Detailed Cost Breakdown"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "table-cost-detail",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_daily_cost",
+                  "fields": [
+                    {
+                      "name": "usage_date",
+                      "expression": "`usage_date`"
+                    },
+                    {
+                      "name": "sku_name",
+                      "expression": "`sku_name`"
+                    },
+                    {
+                      "name": "total_dbus",
+                      "expression": "`total_dbus`"
+                    },
+                    {
+                      "name": "estimated_cost_usd",
+                      "expression": "`estimated_cost_usd`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "usage_date",
+                    "displayName": "Date"
+                  },
+                  {
+                    "fieldName": "sku_name",
+                    "displayName": "SKU"
+                  },
+                  {
+                    "fieldName": "total_dbus",
+                    "displayName": "DBUs"
+                  },
+                  {
+                    "fieldName": "estimated_cost_usd",
+                    "displayName": "Est. Cost (USD)"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 16,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS"
+    }
+  ],
+  "datasets": [
+    {
+      "name": "ds_kpi",
+      "displayName": "KPI Summary",
+      "queryLines": [
+        "SELECT COUNT(*) AS total_runs, SUM(CASE WHEN jr.result_state = 'SUCCEEDED' THEN 1 ELSE 0 END) AS successful_runs, SUM(CASE WHEN jr.result_state != 'SUCCEEDED' THEN 1 ELSE 0 END) AS failed_runs, COALESCE(ROUND((SELECT AVG(jrt.execution_duration_seconds) FROM system.lakeflow.job_task_run_timeline jrt JOIN system.lakeflow.jobs j2 ON jrt.job_id = j2.job_id WHERE j2.name LIKE '%PostNL Retail Pipeline%' AND jrt.period_start_time >= date_sub(current_date(), 7)) / 60.0, 2), 0) AS avg_task_duration_min FROM system.lakeflow.job_run_timeline AS jr JOIN system.lakeflow.jobs AS j ON jr.job_id = j.job_id WHERE j.name LIKE '%PostNL Retail Pipeline%' AND jr.period_start_time >= date_sub(current_date(), 7) AND jr.result_state IS NOT NULL\n"
+      ]
+    },
+    {
+      "name": "ds_run_trends",
+      "displayName": "Job Run Trends",
+      "queryLines": [
+        "SELECT DATE_TRUNC('DAY', jr.period_start_time) AS run_date, jr.result_state, COUNT(*) AS run_count FROM system.lakeflow.job_run_timeline AS jr JOIN system.lakeflow.jobs AS j ON jr.job_id = j.job_id WHERE j.name LIKE '%PostNL Retail Pipeline%' AND jr.period_start_time >= date_sub(current_date(), 14) AND jr.result_state IS NOT NULL GROUP BY ALL ORDER BY run_date DESC\n"
+      ]
+    },
+    {
+      "name": "ds_duration",
+      "displayName": "Job Run Duration",
+      "queryLines": [
+        "SELECT DATE_TRUNC('DAY', jr.period_start_time) AS run_date, ROUND(AVG(TIMESTAMPDIFF(SECOND, jr.period_start_time, jr.period_end_time)) / 60.0, 2) AS avg_duration_min, ROUND(MAX(TIMESTAMPDIFF(SECOND, jr.period_start_time, jr.period_end_time)) / 60.0, 2) AS max_duration_min, COUNT(*) AS run_count FROM system.lakeflow.job_run_timeline AS jr JOIN system.lakeflow.jobs AS j ON jr.job_id = j.job_id WHERE j.name LIKE '%PostNL Retail Pipeline%' AND jr.period_start_time >= date_sub(current_date(), 14) AND jr.result_state IS NOT NULL GROUP BY ALL ORDER BY run_date DESC\n"
+      ]
+    },
+    {
+      "name": "ds_task_trends",
+      "displayName": "Task Duration Trends",
+      "queryLines": [
+        "SELECT DATE_TRUNC('DAY', jrt.period_start_time) AS run_date, jrt.task_key, ROUND(AVG(jrt.execution_duration_seconds), 1) AS avg_exec_seconds, COUNT(*) AS run_count FROM system.lakeflow.job_task_run_timeline AS jrt JOIN system.lakeflow.jobs AS j ON jrt.job_id = j.job_id WHERE j.name LIKE '%PostNL Retail Pipeline%' AND jrt.period_start_time >= date_sub(current_date(), 14) AND jrt.result_state IS NOT NULL GROUP BY ALL ORDER BY run_date DESC, jrt.task_key\n"
+      ]
+    },
+    {
+      "name": "ds_dq",
+      "displayName": "Data Quality Log",
+      "queryLines": [
+        "SELECT check_timestamp, total_records, clean_records, quarantined_records, quarantine_rate FROM serverless_stable_a7uda0_catalog.postnl_monitoring.data_quality_log ORDER BY check_timestamp DESC LIMIT 50\n"
+      ]
+    },
+    {
+      "name": "ds_health",
+      "displayName": "Pipeline Health",
+      "queryLines": [
+        "SELECT snapshot_ts, bronze_record_count, silver_txn_count, silver_items_count, avg_quarantine_rate_pct, successful_batches, last_ingestion_ts FROM serverless_stable_a7uda0_catalog.postnl_monitoring.gold_pipeline_health ORDER BY snapshot_ts DESC LIMIT 1\n"
+      ]
+    },
+    {
+      "name": "ds_daily_cost",
+      "displayName": "Daily Cost",
+      "queryLines": [
+        "SELECT u.usage_date, u.sku_name, ROUND(SUM(u.usage_quantity), 4) AS total_dbus, COALESCE(ROUND(SUM(u.usage_quantity * lp.pricing.default), 2), 0) AS estimated_cost_usd FROM system.billing.usage AS u LEFT JOIN system.billing.list_prices AS lp ON u.cloud = lp.cloud AND u.sku_name = lp.sku_name AND u.usage_start_time BETWEEN lp.price_start_time AND COALESCE(lp.price_end_time, TIMESTAMP '2099-12-31') WHERE u.usage_date >= date_sub(current_date(), 30) AND (u.sku_name LIKE '%SERVERLESS%' OR u.sku_name LIKE '%SQL%' OR u.sku_name LIKE '%JOBS%') GROUP BY u.usage_date, u.sku_name ORDER BY u.usage_date DESC\n"
+      ]
+    },
+    {
+      "name": "ds_project_cost",
+      "displayName": "Project-Tagged Cost",
+      "queryLines": [
+        "SELECT u.usage_date, u.sku_name, ROUND(SUM(u.usage_quantity), 4) AS total_dbus, COALESCE(ROUND(SUM(u.usage_quantity * lp.pricing.default), 2), 0) AS estimated_cost_usd FROM system.billing.usage AS u LEFT JOIN system.billing.list_prices AS lp ON u.cloud = lp.cloud AND u.sku_name = lp.sku_name AND u.usage_start_time BETWEEN lp.price_start_time AND COALESCE(lp.price_end_time, TIMESTAMP '2099-12-31') WHERE u.usage_date >= date_sub(current_date(), 30) AND u.custom_tags.project = 'postnl-retail-monitoring' GROUP BY u.usage_date, u.sku_name ORDER BY u.usage_date DESC\n"
+      ]
+    },
+    {
+      "name": "ds_cost_by_sku",
+      "displayName": "Cost by SKU",
+      "queryLines": [
+        "SELECT u.sku_name, COALESCE(ROUND(SUM(u.usage_quantity * lp.pricing.default), 2), 0) AS total_cost_usd FROM system.billing.usage AS u LEFT JOIN system.billing.list_prices AS lp ON u.cloud = lp.cloud AND u.sku_name = lp.sku_name AND u.usage_start_time BETWEEN lp.price_start_time AND COALESCE(lp.price_end_time, TIMESTAMP '2099-12-31') WHERE u.usage_date >= date_sub(current_date(), 30) AND u.custom_tags.project = 'postnl-retail-monitoring' GROUP BY u.sku_name HAVING SUM(u.usage_quantity * lp.pricing.default) > 0 ORDER BY total_cost_usd DESC LIMIT 8\n"
+      ]
+    }
+  ]
+}
