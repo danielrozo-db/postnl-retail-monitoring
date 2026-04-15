@@ -99,6 +99,35 @@ For each monitored table, Lakehouse Monitoring creates:
 
 Monitors run daily at **midnight (Europe/Amsterdam)** on an automated schedule.
 
+### AI/BI Monitoring Dashboard
+
+A two-page [AI/BI Lakeview dashboard](https://docs.databricks.com/en/dashboards/index.html) provides real-time visibility into pipeline health and costs. The dashboard JSON is stored in `src/dashboards/monitoring.lvdash.json`.
+
+**Page 1 — Pipeline Overview**
+
+| Widget | Type | Description |
+|--------|------|-------------|
+| Total Runs (7d) | KPI Counter | Total job runs in the last 7 days |
+| Successful Runs | KPI Counter | Count of successful runs |
+| Avg Task Duration | KPI Counter | Average task execution time in minutes |
+| Job Run Trends | Stacked Bar | Daily run counts by result state (SUCCEEDED/ERROR) over 14 days |
+| Run Duration Trend | Line Chart | Average and max pipeline duration over 14 days |
+| Task Performance | Grouped Bar | Average execution seconds per task (generate, bronze, silver, gold) per day |
+| Data Quality Records | Bar Chart | Daily clean vs quarantined record counts |
+| Quarantine Rate | Line Chart | Quarantine rate percentage trend |
+| Pipeline Health | Table | Latest snapshot: record counts across layers, batch count, last ingestion time |
+
+**Page 2 — Cost Analysis**
+
+| Widget | Type | Description |
+|--------|------|-------------|
+| Account Daily Cost | Bar Chart | Account-wide serverless and SQL warehouse costs by date (30 days) |
+| Project-Tagged Cost | Bar Chart | Daily costs for resources tagged `postnl-retail-monitoring` |
+| Cost by SKU | Pie Chart | Cost distribution across SKU types for the project |
+| Detailed Breakdown | Table | Date, SKU name, DBU consumption, and estimated cost in USD |
+
+Data sources: `system.lakeflow.job_run_timeline`, `system.lakeflow.job_task_run_timeline`, `system.billing.usage`, `system.billing.list_prices`, and pipeline observability tables.
+
 ## Cost Tracking
 
 Resources are tagged for cost attribution via `system.billing.usage`:
@@ -121,6 +150,8 @@ Use `src/queries/02_job_cost_by_tag.sql` to query costs filtered by these tags.
 │   ├── jobs.yml                            # Serverless job (4 tasks, hourly schedule, tags)
 │   └── monitoring.yml                      # 4 SQL alerts
 └── src/
+    ├── dashboards/
+    │   └── monitoring.lvdash.json          # AI/BI Lakeview dashboard (2 pages, 9 datasets)
     ├── notebooks/
     │   ├── 00_generate_raw_data.py         # Synthetic Dutch retail data generator
     │   ├── 01_raw_to_bronze.py             # Raw JSON → bronze Delta (idempotent)
