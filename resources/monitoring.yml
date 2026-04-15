@@ -10,10 +10,10 @@ resources:
       warehouse_id: ${var.warehouse_id}
       query_text: |
         SELECT
-          ROUND(
+          COALESCE(ROUND(
             SUM(CASE WHEN jr.result_state != 'SUCCEEDED' THEN 1 ELSE 0 END)
             * 100.0 / GREATEST(COUNT(*), 1), 2
-          ) AS failure_rate_pct
+          ), 0) AS failure_rate_pct
         FROM system.lakeflow.job_run_timeline AS jr
         JOIN system.lakeflow.jobs AS j
           ON jr.job_id = j.job_id
