@@ -108,7 +108,7 @@ resources:
       warehouse_id: ${var.warehouse_id}
       query_text: |
         SELECT
-          ROUND(SUM(u.usage_quantity * lp.pricing.default), 2) AS daily_cost_usd
+          COALESCE(ROUND(SUM(u.usage_quantity * lp.pricing.default), 2), 0) AS daily_cost_usd
         FROM system.billing.usage AS u
         LEFT JOIN system.billing.list_prices AS lp
           ON u.cloud = lp.cloud
@@ -116,7 +116,7 @@ resources:
           AND u.usage_start_time BETWEEN lp.price_start_time
             AND COALESCE(lp.price_end_time, TIMESTAMP '2099-12-31')
         WHERE u.custom_tags.project = 'postnl-retail-monitoring'
-          AND u.usage_date = CURRENT_DATE()
+          AND u.usage_date >= DATEADD(DAY, -1, CURRENT_DATE())
       evaluation:
         comparison_operator: 'GREATER_THAN'
         source:
